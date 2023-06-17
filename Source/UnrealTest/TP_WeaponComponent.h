@@ -14,6 +14,12 @@ class UNREALTEST_API UTP_WeaponComponent : public USkeletalMeshComponent
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, Category=Firing)
+		float WeaponRange = 10.0f;
+
+	UPROPERTY(EditAnywhere, Category=Firing)
+		float FireForce = 100000.0f;
+
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)
 	TSubclassOf<class AUnrealTestProjectile> ProjectileClass;
@@ -57,11 +63,4 @@ protected:
 private:
 	/** The Character holding this weapon*/
 	AUnrealTestCharacter* Character;
-
-public:
-	UPROPERTY(EditAnywhere, Category="Weapon")
-	float WeaponRange = 10.0f;
-
-	UPROPERTY(EditAnywhere, Category="Weapon")
-	float FireForce = 100000.0f;
 };

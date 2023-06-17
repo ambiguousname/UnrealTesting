@@ -31,12 +31,12 @@ void UTP_WeaponComponent::Fire()
 		if (World != nullptr)
 		{
 			APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
-			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
-			const FVector OffsetVector = SpawnRotation.RotateVector(MuzzleOffset);
-			const FVector ActorLoc = GetOwner()->GetActorLocation();
 
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = ActorLoc + OffsetVector;
+			APlayerCameraManager* camera = PlayerController->PlayerCameraManager;
+
+			const FVector cameraPos = camera->GetCameraLocation();
+
+			const FVector forward = camera->GetActorForwardVector();
 
 			//Set Spawn Collision Handling Override
 			FActorSpawnParameters ActorSpawnParams;
@@ -47,11 +47,12 @@ void UTP_WeaponComponent::Fire()
 
 			FHitResult out;
 
-			bool hit = World->LineTraceSingleByChannel(out, SpawnLocation, SpawnLocation + (OffsetVector * WeaponRange), ECC_Camera);
+			bool hit = World->LineTraceSingleByChannel(out, cameraPos + forward * 100.0f, cameraPos + (forward * WeaponRange), ECC_Camera);
 			if (hit) {
 				UPrimitiveComponent* comp = out.GetComponent();
+				//DrawDebugLine(World, cameraPos, out.ImpactPoint, FColor::Red, false, 5.0f);
+				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
 				if (comp != nullptr && comp->IsSimulatingPhysics()) {
-					//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s - START: %s, END: %s, Normal: %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName(), *SpawnLocation.ToString(), *out.ImpactPoint.ToString(), *out.ImpactNormal.ToString()));
 					UPrimitiveComponent* componentHit = out.GetComponent();
 					componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
 				}
