@@ -24,38 +24,31 @@ void UTP_WeaponComponent::Fire()
 		return;
 	}
 
-	// Try and fire a projectile
-	if (ProjectileClass != nullptr)
+	UWorld* const World = GetWorld();
+	if (World != nullptr)
 	{
-		UWorld* const World = GetWorld();
-		if (World != nullptr)
-		{
-			APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
+		APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
 
-			APlayerCameraManager* camera = PlayerController->PlayerCameraManager;
+		APlayerCameraManager* camera = PlayerController->PlayerCameraManager;
 
-			const FVector cameraPos = camera->GetCameraLocation();
+		const FVector cameraPos = camera->GetCameraLocation();
 
-			const FVector forward = camera->GetActorForwardVector();
+		const FVector forward = camera->GetActorForwardVector();
 
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+		//Set Spawn Collision Handling Override
+		FActorSpawnParameters ActorSpawnParams;
+		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-			// Spawn the projectile at the muzzle
-			//World->SpawnActor<AUnrealTestProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+		FHitResult out;
 
-			FHitResult out;
-
-			bool hit = World->LineTraceSingleByChannel(out, cameraPos + forward * 100.0f, cameraPos + (forward * WeaponRange), ECC_Camera);
-			if (hit) {
-				UPrimitiveComponent* comp = out.GetComponent();
-				//DrawDebugLine(World, cameraPos, out.ImpactPoint, FColor::Red, false, 5.0f);
-				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
-				if (comp != nullptr && comp->IsSimulatingPhysics()) {
-					UPrimitiveComponent* componentHit = out.GetComponent();
-					componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
-				}
+		bool hit = World->LineTraceSingleByChannel(out, cameraPos + forward * 100.0f, cameraPos + (forward * WeaponRange), ECC_Camera);
+		if (hit) {
+			UPrimitiveComponent* comp = out.GetComponent();
+			//DrawDebugLine(World, cameraPos + forward * 100.0f, out.ImpactPoint, FColor::Red, false, 5.0f);
+			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
+			if (comp != nullptr && comp->IsSimulatingPhysics()) {
+				UPrimitiveComponent* componentHit = out.GetComponent();
+				componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
 			}
 		}
 	}

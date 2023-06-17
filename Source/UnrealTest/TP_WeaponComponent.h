@@ -15,7 +15,7 @@ class UNREALTEST_API UTP_WeaponComponent : public USkeletalMeshComponent
 
 public:
 	UPROPERTY(EditAnywhere, Category=Firing)
-		float WeaponRange = 10.0f;
+		float WeaponRange = 10000.0f;
 
 	UPROPERTY(EditAnywhere, Category=Firing)
 		float FireForce = 100000.0f;
