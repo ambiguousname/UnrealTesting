@@ -17,6 +17,12 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
 }
 
+void UTP_WeaponComponent::BeginPlay() {
+	Super::BeginPlay();
+	static ConstructorHelpers::FClassFinder<UActorComponent> OnHitCompObj(TEXT("/Content/HitDecal"));
+	UOnHitComponent = OnHitCompObj.Class;
+}
+
 void UTP_WeaponComponent::Fire()
 {
 	if (Character == nullptr || Character->GetController() == nullptr)
@@ -46,8 +52,17 @@ void UTP_WeaponComponent::Fire()
 			UPrimitiveComponent* comp = out.GetComponent();
 			//DrawDebugLine(World, cameraPos + forward * 100.0f, out.ImpactPoint, FColor::Red, false, 5.0f);
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
+			UPrimitiveComponent* componentHit = out.GetComponent();
+
+			UMaterialInterface* decal = DefaultFiringDecal;
+			
+			AActor* actor = out.GetActor();
+			if (actor != nullptr) {
+				actor->GetComponentByClass<UOnHitComponent>();
+				FindObject<UClass>(ClassPackage, TEXT(""))
+			}
+			UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition, 15.0f);
 			if (comp != nullptr && comp->IsSimulatingPhysics()) {
-				UPrimitiveComponent* componentHit = out.GetComponent();
 				componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
 			}
 		}

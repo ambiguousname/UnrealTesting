@@ -12,13 +12,18 @@ UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnab
 class UNREALTEST_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
 	GENERATED_BODY()
+public:
+	DECLARE_DELEGATE(OnHitDelegate)
 
 public:
-	UPROPERTY(EditAnywhere, Category=Firing)
-		float WeaponRange = 10000.0f;
+	UPROPERTY(EditAnywhere, Category = Firing)
+	UMaterialInterface* DefaultFiringDecal;
 
 	UPROPERTY(EditAnywhere, Category=Firing)
-		float FireForce = 100000.0f;
+	float WeaponRange = 10000.0f;
+
+	UPROPERTY(EditAnywhere, Category=Firing)
+	float FireForce = 100000.0f;
 
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)
@@ -60,7 +65,11 @@ protected:
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	virtual void BeginPlay();
+
 private:
 	/** The Character holding this weapon*/
 	AUnrealTestCharacter* Character;
+
+	TSubclassOf<class UActorComponent> UOnHitComponent;
 };
