@@ -1,2 +1,7 @@
-- Set up control rig and animate Enemy.
-  - If there's time: fix the root node.
+- Enemy navigation
+- Add bullet spread
+- Animate Enemy
+	- Flip Enemy mesh
+	- Enemy weapons? IK?
+- Fix player weapon animation (add IK?)
+- Textures
