@@ -27,7 +27,8 @@ void AEnemy::Tick(float DeltaTime)
 
 void AEnemy::OnHit_Implementation(FVector pos) {
 	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("HIT"));
-	this->OnRecieveHit();
+	// If you need to access this event when it happens, look for "Add Event On Hit" in BP.
+	//this->OnRecieveHit();
 }
 
 // Called to bind functionality to input

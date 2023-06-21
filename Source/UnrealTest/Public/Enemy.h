@@ -28,9 +28,4 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void OnHit_Implementation(FVector pos) override;
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnRecieveHit();
-
-	void OnReceiveHit_Implementation();
 };
