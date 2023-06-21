@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "../TP_WeaponComponent.h"
 #include "HitBehaviorInterface.generated.h"
 
 
@@ -16,5 +17,5 @@ class IHitBehaviorInterface {
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Hit Behavior")
-	void OnHit(FVector pos);
+	void OnHit(FVector pos, FWeapon weaponUsed);
 };

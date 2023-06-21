@@ -25,10 +25,19 @@ void AEnemy::Tick(float DeltaTime)
 
 }
 
-void AEnemy::OnHit_Implementation(FVector pos) {
+void AEnemy::OnHit_Implementation(FVector pos, FWeapon weaponUsed) {
 	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("HIT"));
+
+	RecieveDamage(weaponUsed.baseDamage);
 	// If you need to access this event when it happens, look for "Add Event On Hit" in BP.
 	//this->OnRecieveHit();
+}
+
+void AEnemy::RecieveDamage(float damage) {
+	hp -= damage;
+	if (hp <= 0) {
+		Destroy();
+	}
 }
 
 // Called to bind functionality to input

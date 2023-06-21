@@ -55,7 +55,7 @@ void UTP_WeaponComponent::Fire()
 			if (currActor != nullptr) {
 				bool doesImp = currActor->GetClass()->ImplementsInterface(UHitBehaviorInterface::StaticClass());
 				if (doesImp) {
-					IHitBehaviorInterface::Execute_OnHit(currActor, out.ImpactPoint);
+					IHitBehaviorInterface::Execute_OnHit(currActor, out.ImpactPoint, WeaponStats);
 				}
 			}
 			

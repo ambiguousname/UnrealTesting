@@ -8,6 +8,14 @@
 
 class AUnrealTestCharacter;
 
+USTRUCT(BlueprintType)
+struct FWeapon {
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float baseDamage = 10.0f;
+};
+
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UNREALTEST_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
@@ -24,6 +32,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category=Firing)
 	float FireForce = 100000.0f;
+
+	UPROPERTY(EditAnywhere, Category=Firing)
+	FWeapon WeaponStats;
 
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)

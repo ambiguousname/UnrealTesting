@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "HitBehaviorInterface.h"
+#include "../TP_WeaponComponent.h"
 #include "Enemy.generated.h"
 
 UCLASS()
@@ -13,12 +14,20 @@ class UNREALTEST_API AEnemy : public ACharacter, public IHitBehaviorInterface
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Gameplay)
+	float BaseHP = 100.0f;
+protected:
+	UPROPERTY(BlueprintReadOnly)
+	float hp = BaseHP;
+public:
 	// Sets default values for this character's properties
 	AEnemy();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	void RecieveDamage(float damage);
 
 public:	
 	// Called every frame
@@ -27,5 +36,5 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void OnHit_Implementation(FVector pos) override;
+	virtual void OnHit_Implementation(FVector pos, FWeapon weaponUsed) override;
 };
