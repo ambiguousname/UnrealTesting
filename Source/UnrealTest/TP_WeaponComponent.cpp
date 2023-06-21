@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include <HitBehaviorInterface.h>
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -49,6 +50,14 @@ void UTP_WeaponComponent::Fire()
 			UPrimitiveComponent* componentHit = out.GetComponent();
 
 			UMaterialInterface* decal = DefaultFiringDecal;
+
+			AActor* currActor = out.GetActor();
+			if (currActor != nullptr) {
+				bool doesImp = currActor->GetClass()->ImplementsInterface(UHitBehaviorInterface::StaticClass());
+				if (doesImp) {
+					IHitBehaviorInterface::Execute_OnHit(currActor, out.ImpactPoint);
+				}
+			}
 			
 			if (decal != nullptr) {
 				UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition, 15.0f);
