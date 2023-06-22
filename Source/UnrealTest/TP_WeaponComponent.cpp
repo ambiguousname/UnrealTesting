@@ -19,7 +19,6 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 
 
 	fireTraceParams = FCollisionQueryParams();
-	fireTraceParams.AddIgnoredActor(GetOwner());
 }
 
 void UTP_WeaponComponent::Fire()
@@ -46,7 +45,7 @@ void UTP_WeaponComponent::Fire()
 
 		FHitResult out;
 
-		bool hit = World->LineTraceSingleByChannel(out, cameraPos, cameraPos + (forward * WeaponRange), ECC_Visibility, fireTraceParams);
+		bool hit = World->LineTraceSingleByChannel(out, cameraPos, cameraPos + (forward * WeaponRange), ECC_WorldDynamic, fireTraceParams);
 		if (hit) {
 			UPrimitiveComponent* comp = out.GetComponent();
 			//DrawDebugLine(World, cameraPos, out.ImpactPoint, FColor::Red, false, 5.0f);
@@ -98,6 +97,8 @@ void UTP_WeaponComponent::AttachWeapon(AUnrealTestCharacter* TargetCharacter)
 		return;
 	}
 
+	fireTraceParams.ClearIgnoredActors();
+	fireTraceParams.AddIgnoredActor(Character);
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
