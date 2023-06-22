@@ -16,6 +16,10 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 {
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
+
+
+	fireTraceParams = FCollisionQueryParams();
+	fireTraceParams.AddIgnoredActor(GetOwner());
 }
 
 void UTP_WeaponComponent::Fire()
@@ -42,10 +46,10 @@ void UTP_WeaponComponent::Fire()
 
 		FHitResult out;
 
-		bool hit = World->LineTraceSingleByChannel(out, cameraPos + forward * 100.0f, cameraPos + (forward * WeaponRange), ECC_Camera);
+		bool hit = World->LineTraceSingleByChannel(out, cameraPos, cameraPos + (forward * WeaponRange), ECC_Visibility, fireTraceParams);
 		if (hit) {
 			UPrimitiveComponent* comp = out.GetComponent();
-			//DrawDebugLine(World, cameraPos + forward * 100.0f, out.ImpactPoint, FColor::Red, false, 5.0f);
+			//DrawDebugLine(World, cameraPos, out.ImpactPoint, FColor::Red, false, 5.0f);
 			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
 			UPrimitiveComponent* componentHit = out.GetComponent();
 

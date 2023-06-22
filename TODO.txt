@@ -1,5 +1,5 @@
-- Enemy navigation
 - Add bullet spread
+- Actually Good AI
 - Animate Enemy
 	- Flip Enemy mesh
 	- Enemy weapons? IK?

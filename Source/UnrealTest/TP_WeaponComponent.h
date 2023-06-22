@@ -79,4 +79,6 @@ protected:
 private:
 	/** The Character holding this weapon*/
 	AUnrealTestCharacter* Character;
+
+	FCollisionQueryParams fireTraceParams;
 };
