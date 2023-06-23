@@ -14,11 +14,45 @@
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
-	// Default offset from the character location for projectiles to spawn
-	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
-
-
 	fireTraceParams = FCollisionQueryParams();
+}
+
+void UTP_WeaponComponent::FireFromTrace(UWorld* World, FVector from, FVector forward, FVector newForward) {
+	// newForward assumes that it's oriented based on (1, 0, 0) being absolute forward. We need to put it in terms of the actual forward vector.
+
+	FVector to = forward - FVector::ForwardVector;
+	to.Normalize();
+	FRotator toRotation = forward.Rotation();
+
+	FVector rotated = toRotation.RotateVector(newForward);
+	rotated.Normalize();
+	
+	FHitResult out;
+	bool hit = World->LineTraceSingleByChannel(out, from, from + rotated  * WeaponRange, ECC_WorldDynamic, fireTraceParams);
+
+	if (hit) {
+		UPrimitiveComponent* comp = out.GetComponent();
+		//DrawDebugLine(World, from, out.ImpactPoint, FColor::Red, false, 5.0f);
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
+		UPrimitiveComponent* componentHit = out.GetComponent();
+
+		UMaterialInterface* decal = DefaultFiringDecal;
+
+		AActor* currActor = out.GetActor();
+		if (currActor != nullptr) {
+			bool doesImp = currActor->GetClass()->ImplementsInterface(UHitBehaviorInterface::StaticClass());
+			if (doesImp) {
+				IHitBehaviorInterface::Execute_OnHit(currActor, out.ImpactPoint, WeaponStats);
+			}
+		}
+
+		if (decal != nullptr) {
+			UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition, 15.0f);
+		}
+		if (comp != nullptr && comp->IsSimulatingPhysics()) {
+			componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
+		}
+	}
 }
 
 void UTP_WeaponComponent::Fire()
@@ -43,31 +77,10 @@ void UTP_WeaponComponent::Fire()
 		FActorSpawnParameters ActorSpawnParams;
 		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-		FHitResult out;
-
-		bool hit = World->LineTraceSingleByChannel(out, cameraPos, cameraPos + (forward * WeaponRange), ECC_WorldDynamic, fireTraceParams);
-		if (hit) {
-			UPrimitiveComponent* comp = out.GetComponent();
-			//DrawDebugLine(World, cameraPos, out.ImpactPoint, FColor::Red, false, 5.0f);
-			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *out.GetActor()->GetName(), *out.GetComponent()->GetName()));
-			UPrimitiveComponent* componentHit = out.GetComponent();
-
-			UMaterialInterface* decal = DefaultFiringDecal;
-
-			AActor* currActor = out.GetActor();
-			if (currActor != nullptr) {
-				bool doesImp = currActor->GetClass()->ImplementsInterface(UHitBehaviorInterface::StaticClass());
-				if (doesImp) {
-					IHitBehaviorInterface::Execute_OnHit(currActor, out.ImpactPoint, WeaponStats);
-				}
-			}
-			
-			if (decal != nullptr) {
-				UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition, 15.0f);
-			}
-			if (comp != nullptr && comp->IsSimulatingPhysics()) {
-				componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
-			}
+		TArray<FVector> spreadVectors = GetBulletSpread();
+		for (int i = 0; i < spreadVectors.Num(); i++) {
+			FVector vector = spreadVectors[i];
+			FireFromTrace(World, cameraPos, forward, vector);
 		}
 	}
 	

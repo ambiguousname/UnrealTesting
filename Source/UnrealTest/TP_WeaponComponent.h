@@ -48,10 +48,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* FireAnimation;
 
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	FVector MuzzleOffset;
-
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputMappingContext* FireMappingContext;
@@ -60,6 +56,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
 
+public:
 	/** Sets default values for this component's properties */
 	UTP_WeaponComponent();
 
@@ -71,10 +68,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
 
+	UFUNCTION(BlueprintNativeEvent, Category = "Firing")
+	TArray<FVector> GetBulletSpread();
+
+	TArray<FVector> GetBulletSpread_Implementation() { auto arr = TArray<FVector>(); arr.Add(FVector::ForwardVector); return arr; }
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	void FireFromTrace(UWorld* World, FVector from, FVector forward, FVector newForward);
 
 private:
 	/** The Character holding this weapon*/
