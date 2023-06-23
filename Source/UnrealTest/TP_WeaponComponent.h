@@ -68,6 +68,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
 
+	/** 
+	* Get new forward vectors for where bullets should be firing to.
+	* @return A list of forwards (where 1,0,0 is the default forward) to fire towards.
+	*/
 	UFUNCTION(BlueprintNativeEvent, Category = "Firing")
 	TArray<FVector> GetBulletSpread();
 

@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/DecalComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include <HitBehaviorInterface.h>
@@ -47,7 +48,13 @@ void UTP_WeaponComponent::FireFromTrace(UWorld* World, FVector from, FVector for
 		}
 
 		if (decal != nullptr) {
-			UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition, 15.0f);
+			
+			UDecalComponent* spawnedDecal = UGameplayStatics::SpawnDecalAttached(DefaultFiringDecal, FVector::OneVector * 10.0f, componentHit, NAME_None, out.ImpactPoint, FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition);
+			if (spawnedDecal != nullptr) {
+				spawnedDecal->SetFadeScreenSize(0.0f);
+				// This only works if the Material has the Decal Lifetime Opacity value.
+				spawnedDecal->SetFadeOut(13.0f, 2.0f, false);
+			}
 		}
 		if (comp != nullptr && comp->IsSimulatingPhysics()) {
 			componentHit->AddImpulseAtLocation(-out.ImpactNormal * FireForce, out.ImpactPoint);
