@@ -23,13 +23,6 @@ public:
 	// Sets default values for this character's properties
 	AEnemy();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
-	void RecieveDamage(float damage);
-
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -37,4 +30,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void OnHit_Implementation(FVector pos, FWeapon weaponUsed) override;
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+	void RecieveDamage(float damage);
 };

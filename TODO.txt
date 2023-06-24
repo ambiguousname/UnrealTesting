@@ -1,5 +1,6 @@
+- Enemy shooting
 - Actually Good AI
-- Animate Enemy
+- Actually Animate Enemy
 	- Flip Enemy mesh
 	- Enemy weapons? IK?
 - Fix player weapon animation (add IK?)
