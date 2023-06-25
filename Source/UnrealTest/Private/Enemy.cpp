@@ -9,6 +9,11 @@ AEnemy::AEnemy()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	if (WeaponMesh) {
+		WeaponMesh->SetupAttachment(GetMesh());
+		WeaponMesh->SetRelativeLocation(FVector(-71.3, -50, 134));
+	}
 }
 
 // Called when the game starts or when spawned
