@@ -10,7 +10,7 @@
 #include "Components/DecalComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "../Enemies/HitBehaviorInterface.h"
+#include "UnrealTest/Enemies/HitBehaviorInterface.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()

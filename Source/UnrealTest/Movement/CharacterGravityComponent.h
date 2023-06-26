@@ -13,6 +13,9 @@ UCLASS()
 class UNREALTEST_API UCharacterGravityComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
-	
+
+	UCharacterGravityComponent();
+public:
+	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
 
 };

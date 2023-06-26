@@ -8,12 +8,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "UnrealTest\Movement\CharacterGravityComponent.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 // AUnrealTestCharacter
 
-AUnrealTestCharacter::AUnrealTestCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+AUnrealTestCharacter::AUnrealTestCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCharacterGravityComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Character doesnt have a rifle at start
 	bHasRifle = false;
@@ -79,8 +80,10 @@ void AUnrealTestCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
 {
 	bool isSliding = Value.Get<bool>();
-	UCharacterMovementComponent* comp = Cast<UCharacterMovementComponent>(GetMovementComponent());
-	comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
+	UCharacterGravityComponent* comp = Cast<UCharacterGravityComponent>(GetMovementComponent());
+	if (comp) {
+		comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
+	}
 }
 
 void AUnrealTestCharacter::Move(const FInputActionValue& Value)

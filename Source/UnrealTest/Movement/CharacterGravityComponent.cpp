@@ -3,3 +3,10 @@
 
 #include "CharacterGravityComponent.h"
 
+UCharacterGravityComponent::UCharacterGravityComponent() {
+	
+}
+
+void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) {
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("E"));
+}

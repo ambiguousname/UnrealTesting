@@ -44,7 +44,7 @@ class AUnrealTestCharacter : public ACharacter
 
 	
 public:
-	AUnrealTestCharacter(const class FObjectInitializer& ObjectInitializer);
+	AUnrealTestCharacter(const FObjectInitializer& ObjectInitializer);
 
 public:
 		
