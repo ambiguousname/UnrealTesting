@@ -82,7 +82,13 @@ void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
 	bool isSliding = Value.Get<bool>();
 	UCharacterGravityComponent* comp = Cast<UCharacterGravityComponent>(GetMovementComponent());
 	if (comp) {
-		comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
+		if (isSliding) {
+			comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
+			comp->GravityShift(FVector::BackwardVector * 9.8f);
+		}
+		else {
+			comp->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
 	}
 }
 

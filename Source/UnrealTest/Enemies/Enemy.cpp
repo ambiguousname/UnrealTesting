@@ -20,6 +20,7 @@ AEnemy::AEnemy()
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
+	hp = BaseHP;
 }
 
 // Called every frame
