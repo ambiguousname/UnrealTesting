@@ -5,6 +5,7 @@
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -12,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////
 // AUnrealTestCharacter
 
-AUnrealTestCharacter::AUnrealTestCharacter()
+AUnrealTestCharacter::AUnrealTestCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	// Character doesnt have a rifle at start
 	bHasRifle = false;
@@ -69,9 +70,18 @@ void AUnrealTestCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Look);
+
+		//Sliding
+		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Slide);
 	}
 }
 
+void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
+{
+	bool isSliding = Value.Get<bool>();
+	UCharacterMovementComponent* comp = Cast<UCharacterMovementComponent>(GetMovementComponent());
+	comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
+}
 
 void AUnrealTestCharacter::Move(const FInputActionValue& Value)
 {

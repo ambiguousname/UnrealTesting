@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "HitBehaviorInterface.h"
-#include "../TP_WeaponComponent.h"
+#include "../FP_Character/TP_WeaponComponent.h"
 #include "Enemy.generated.h"
 
 UCLASS()

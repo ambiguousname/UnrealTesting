@@ -39,12 +39,12 @@ class AUnrealTestCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SlideAction;
+
 	
 public:
-	AUnrealTestCharacter();
-
-protected:
-	virtual void BeginPlay();
+	AUnrealTestCharacter(const class FObjectInitializer& ObjectInitializer);
 
 public:
 		
@@ -65,11 +65,15 @@ public:
 	bool GetHasRifle();
 
 protected:
+	virtual void BeginPlay();
+
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void Slide(const FInputActionValue& Value);
 
 protected:
 	// APawn interface

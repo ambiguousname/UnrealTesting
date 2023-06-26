@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UnrealTestGameMode.h"
-#include "UnrealTestCharacter.h"
+#include "FP_Character/UnrealTestCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUnrealTestGameMode::AUnrealTestGameMode()

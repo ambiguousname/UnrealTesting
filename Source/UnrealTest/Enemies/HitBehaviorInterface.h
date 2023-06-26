@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../TP_WeaponComponent.h"
+#include "../FP_Character/TP_WeaponComponent.h"
 #include "HitBehaviorInterface.generated.h"
 
 
