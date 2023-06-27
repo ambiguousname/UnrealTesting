@@ -2,6 +2,7 @@
 
 
 #include "Enemy.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -21,6 +22,10 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	hp = BaseHP;
+
+	// The skeleton doesn't exist until play starts, so we just set up the attachment now. (Maybe PostLoad would also work?)
+	FAttachmentTransformRules rules(EAttachmentRule::SnapToTarget, true);
+	WeaponMesh->AttachToComponent(GetMesh(), rules, TEXT("WeaponGrip"));
 }
 
 // Called every frame
