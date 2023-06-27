@@ -4,11 +4,13 @@
 #include "CharacterGravityComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/PhysicsVolume.h"
 #include "Components/CapsuleComponent.h"
 
 enum GravityMovementMode {
-	CUSTOM_GRAVITY_WALK, UMETA(DisplayName="Custom Gravity Walking")
+	// Read my lips: no Bill Cipher jokes.
 	CUSTOM_GRAVITY_FALL, UMETA(DisplayName="Custom Gravity Falling")
+	CUSTOM_GRAVITY_WALK, UMETA(DisplayName = "Custom Gravity Walking")
 	CUSTOM_GRAVITY_JUMP, UMETA(DisplayName="Custom Gravity Jumping")
 };
 
@@ -91,20 +93,126 @@ void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMov
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
 
-void UCharacterGravityComponent::CustomGravityWalk() {
+void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator newRotation) {
+	CalcVelocity(DeltaTime, GroundFriction, false, BrakingDecelerationWalking);
+	FVector delta = (Velocity)*DeltaTime;
+	FVector RampVector = FVector(delta);
+	FHitResult Hit(1.f);
+	SafeMoveUpdatedComponent(delta, newRotation, true, Hit);
+	if (!Hit.IsValidBlockingHit()) {
+		SetMovementMode(EMovementMode::MOVE_Custom, CUSTOM_GRAVITY_FALL);
+		return;
+	}
+
+	float LastMoveTimeSlice = DeltaTime;
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Blocking: %d Walkable Ramp: %d"), Hit.IsValidBlockingHit(), (Hit.Time > 0.f) && (Hit.Normal.Z > UE_KINDA_SMALL_NUMBER) && IsWalkable(Hit)));
+
+	// Taken wholesale (and modified some beyond that) from CharacterMovementComponent.cpp's MoveAlongFloor:
+
+	// I've yet to see when this is called:
+	if (Hit.bStartPenetrating) {
+		HandleImpact(Hit);
+		SlideAlongSurface(delta, 1.f, Hit.Normal, Hit, true);
+
+		if (Hit.bStartPenetrating)
+		{
+			OnCharacterStuckInGeometry(&Hit);
+		}
+	}
+	else if (Hit.IsValidBlockingHit()) {
+		float PercentTimeApplied = Hit.Time;
+
+		if ((Hit.Time > 0.f) && (Hit.Normal.Z > UE_KINDA_SMALL_NUMBER) && IsWalkable(Hit))
+		{
+			// Another walkable ramp.
+			const float InitialPercentRemaining = 1.f - PercentTimeApplied;
+			RampVector = ComputeGroundMovementDelta(delta * InitialPercentRemaining, Hit, false);
+			LastMoveTimeSlice = InitialPercentRemaining * LastMoveTimeSlice;
+			SafeMoveUpdatedComponent(RampVector, UpdatedComponent->GetComponentQuat(), true, Hit);
+
+			const float SecondHitPercent = Hit.Time * InitialPercentRemaining;
+			PercentTimeApplied = FMath::Clamp(PercentTimeApplied + SecondHitPercent, 0.f, 1.f);
+		}
+
+		if (Hit.IsValidBlockingHit())
+		{
+			if (CanStepUp(Hit) || (CharacterOwner->GetMovementBase() != nullptr && Hit.HitObjectHandle == CharacterOwner->GetMovementBase()->GetOwner()))
+			{
+				// hit a barrier, try to step up
+				const FVector PreStepUpLocation = UpdatedComponent->GetComponentLocation();
+				const FVector GravDir(0.f, 0.f, -1.f);
+				FStepDownResult out;
+				if (!StepUp(GravDir, delta * (1.f - PercentTimeApplied), Hit, &out))
+				{
+					UE_LOG(LogTemp, Verbose, TEXT("- StepUp (ImpactNormal %s, Normal %s"), *Hit.ImpactNormal.ToString(), *Hit.Normal.ToString());
+					HandleImpact(Hit, LastMoveTimeSlice, RampVector);
+					SlideAlongSurface(delta, 1.f - PercentTimeApplied, Hit.Normal, Hit, true);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Verbose, TEXT("+ StepUp (ImpactNormal %s, Normal %s"), *Hit.ImpactNormal.ToString(), *Hit.Normal.ToString());
+					if (!bMaintainHorizontalGroundVelocity)
+					{
+						// Don't recalculate velocity based on this height adjustment, if considering vertical adjustments. Only consider horizontal movement.
+						bJustTeleported = true;
+						const float StepUpTimeSlice = (1.f - PercentTimeApplied) * DeltaTime;
+						if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity() && StepUpTimeSlice >= UE_KINDA_SMALL_NUMBER)
+						{
+							Velocity = (UpdatedComponent->GetComponentLocation() - PreStepUpLocation) / StepUpTimeSlice;
+							Velocity.Z = 0;
+						}
+					}
+				}
+			}
+			else if (Hit.Component.IsValid() && !Hit.Component.Get()->CanCharacterStepUp(CharacterOwner))
+			{
+				HandleImpact(Hit, LastMoveTimeSlice, RampVector);
+				SlideAlongSurface(delta, 1.f - PercentTimeApplied, Hit.Normal, Hit, true);
+			}
+		}
+	}
+}
+
+// READ MY LIPS. NO BILL CIPHER JOKES.
+void UCharacterGravityComponent::CustomGravityFall(float DeltaTime, FRotator newRotation, int32 Iterations) {
+
+	// Taken mostly from CharacterMovementComponent.cpp's PhysFalling:
+	float remainingTime = DeltaTime;
+	while (remainingTime >= MIN_TICK_TIME && Iterations < MaxSimulationIterations) {
+		Iterations++;
+		float timeTick = GetSimulationTimeStep(remainingTime, Iterations);
+		remainingTime -= timeTick;
+
+		const FVector OldLocation = UpdatedComponent->GetComponentLocation();
+		bJustTeleported = false;
+
+		const FVector OldVelocityWithRootMotion = Velocity;
+
+		float GravityTime = timeTick;
+
+		Velocity = NewFallVelocity(Velocity, internalGravity * 100.0f, GravityTime);
+
+		// Compute change in position (using midpoint integration method).
+		FVector Adjusted = 0.5f * (OldVelocityWithRootMotion + Velocity) * timeTick;
+
+		FHitResult Hit(1.f);
+		SafeMoveUpdatedComponent(Adjusted, newRotation, true, Hit);
+
+		float subTimeTickRemaining = timeTick * (1.f - Hit.Time);
+		if (Hit.bBlockingHit) {
+			if (Hit.Normal.Dot(-internalGravity.GetSafeNormal()) > 0.5) {
+				remainingTime += subTimeTickRemaining;
+				SetMovementMode(EMovementMode::MOVE_Custom, CUSTOM_GRAVITY_WALK);
+				return;
+			}
+		}
+	}
 }
 
 void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	AddForce(internalGravity * 10000.0f);
-	if (MovementMode.GetValue() == EMovementMode::MOVE_Custom) {
-		switch (CustomMovementMode) {
-			case CUSTOM_GRAVITY_WALK:
-				CustomGravityWalk();
-				break;
-		}
-	}
-	else {
+	if (MovementMode.GetValue() != EMovementMode::MOVE_Custom) {
+		AddForce(internalGravity * 10000.0f);
 		FRotator newRotation;
 		if (RotateTowardsGravity(DeltaTime, newRotation)) {
 			FHitResult Adjustment(1.f);
@@ -120,7 +228,12 @@ void UCharacterGravityComponent::PhysCustom(float DeltaTime, int32 Iterations) {
 	FRotator newRotation = GetLastUpdateRotation();
 	RotateTowardsGravity(DeltaTime, newRotation);
 
-	FVector delta = Velocity * DeltaTime;
-	FHitResult Adjustment(1.f);
-	SafeMoveUpdatedComponent(delta, newRotation, true, Adjustment);
+	switch (CustomMovementMode) {
+		case CUSTOM_GRAVITY_FALL:
+			CustomGravityFall(DeltaTime, newRotation, Iterations);
+		break;
+		case CUSTOM_GRAVITY_WALK:
+			CustomGravityWalk(DeltaTime, newRotation);
+		break;
+	}
 }

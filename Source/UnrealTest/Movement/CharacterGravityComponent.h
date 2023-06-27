@@ -27,7 +27,9 @@ public:
 protected:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void CustomGravityWalk();
+	void CustomGravityWalk(float DeltaTime, FRotator newRotation);
+
+	void CustomGravityFall(float DeltaTime, FRotator newRotation, int32 Iterations);
 
 	bool RotateTowardsGravity(float DeltaTime, FRotator& out);
 public:
