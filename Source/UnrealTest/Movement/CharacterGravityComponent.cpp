@@ -24,17 +24,6 @@ UCharacterGravityComponent::UCharacterGravityComponent() {
 	bAutoActivate = true;
 }
 
-void UCharacterGravityComponent::PostLoad() {
-	Super::PostLoad();
-
-	if (CharacterOwner) {
-		Camera = CharacterOwner->GetComponentByClass<UCameraComponent>();
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("COULD NOT FIND Camera"));
-	}
-}
-
 FRotator UCharacterGravityComponent::GetRotatorFromGravity(FVector grav) {
 	// Primarily, this is about rotating the global down down vector (and everything else) to match the new gravity vector.
 	// So, when the gravity changes, look at how you can set the actor's rotation to match the new gravity.
@@ -82,6 +71,22 @@ void UCharacterGravityComponent::GravityShift(FVector newGravity) {
 	gravityRotationCompletion = 0.0f;
 }
 
+bool UCharacterGravityComponent::RotateTowardsGravity(float DeltaTime, FRotator& out) {
+	if (gravityRotationCompletion < 1) {
+		gravityRotationCompletion += DeltaTime * GravityRotationRate;
+		if (gravityRotationCompletion >= 1) {
+			gravityRotationCompletion = 1;
+		}
+
+		out = (1 - gravityRotationCompletion) * previousRotation + gravityRotation * gravityRotationCompletion;
+		out.Normalize();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) {
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
@@ -91,8 +96,8 @@ void UCharacterGravityComponent::CustomGravityWalk() {
 
 void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	AddForce(internalGravity * 10000.0f);
 	if (MovementMode.GetValue() == EMovementMode::MOVE_Custom) {
-		AddForce(internalGravity * 10000.0f);
 		switch (CustomMovementMode) {
 			case CUSTOM_GRAVITY_WALK:
 				CustomGravityWalk();
@@ -100,7 +105,11 @@ void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick 
 		}
 	}
 	else {
-		AddForce(FVector::DownVector * 9.8f * 10000.0f);
+		FRotator newRotation;
+		if (RotateTowardsGravity(DeltaTime, newRotation)) {
+			FHitResult Adjustment(1.f);
+			SafeMoveUpdatedComponent(FVector::ZeroVector, newRotation, false, Adjustment);
+		}
 	}
 }
 
@@ -108,19 +117,10 @@ void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick 
 void UCharacterGravityComponent::PhysCustom(float DeltaTime, int32 Iterations) {
 	Super::PhysCustom(DeltaTime, Iterations);
 
-	if (gravityRotationCompletion < 1) {
-		gravityRotationCompletion = DeltaTime * GravityRotationRate;
-		if (gravityRotationCompletion >= 1) {
-			gravityRotationCompletion = 1;
-		}
-
-		FRotator newRotation = (1 - gravityRotationCompletion) * previousRotation + gravityRotation * gravityRotationCompletion;
-		if (Camera) {
-			Camera.Get()->SetWorldRotation(newRotation);
-		}
-	}
+	FRotator newRotation = GetLastUpdateRotation();
+	RotateTowardsGravity(DeltaTime, newRotation);
 
 	FVector delta = Velocity * DeltaTime;
 	FHitResult Adjustment(1.f);
-	SafeMoveUpdatedComponent(delta, FRotator::ZeroRotator, true, Adjustment);
+	SafeMoveUpdatedComponent(delta, newRotation, true, Adjustment);
 }

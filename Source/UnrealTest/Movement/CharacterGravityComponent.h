@@ -29,8 +29,7 @@ protected:
 
 	void CustomGravityWalk();
 
-	virtual void PostLoad() override;
-
+	bool RotateTowardsGravity(float DeltaTime, FRotator& out);
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GravityRotationRate = 1.0f;
@@ -44,6 +43,4 @@ protected:
 	FRotator previousRotation;
 	// Percentage:
 	float gravityRotationCompletion = 0.0f;
-
-	TObjectPtr<UCameraComponent> Camera;
 };

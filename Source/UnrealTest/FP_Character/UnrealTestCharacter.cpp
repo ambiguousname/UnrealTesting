@@ -8,7 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "UnrealTest\Movement\CharacterGravityComponent.h"
+#include "UnrealTest/Movement/CharacterGravityComponent.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,6 @@ AUnrealTestCharacter::AUnrealTestCharacter(const FObjectInitializer& ObjectIniti
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
-	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
@@ -87,6 +86,7 @@ void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
 			comp->GravityShift(FVector::BackwardVector * 9.8f);
 		}
 		else {
+			comp->GravityShift(FVector::DownVector * 9.8f);
 			comp->SetMovementMode(EMovementMode::MOVE_Walking);
 		}
 	}
@@ -100,8 +100,8 @@ void AUnrealTestCharacter::Move(const FInputActionValue& Value)
 	if (Controller != nullptr)
 	{
 		// add movement 
-		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-		AddMovementInput(GetActorRightVector(), MovementVector.X);
+		AddMovementInput(FirstPersonCameraComponent->GetForwardVector(), MovementVector.Y);
+		AddMovementInput(FirstPersonCameraComponent->GetRightVector(), MovementVector.X);
 	}
 }
 
@@ -113,8 +113,13 @@ void AUnrealTestCharacter::Look(const FInputActionValue& Value)
 	if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		FirstPersonCameraComponent->AddLocalRotation(FRotator(-LookAxisVector.Y, LookAxisVector.X, 0));
+		FRotator cameraRot = FirstPersonCameraComponent->GetRelativeRotation();
+		if (FMath::Abs(cameraRot.Pitch) > 85) {
+			cameraRot.Pitch = FMath::Lerp(FMath::Sign(cameraRot.Pitch) * 85, cameraRot.Pitch, 0.1f);
+		}
+		// Because we're adding to local rotation, the camera can get weird about how we rotate. So we make sure to set the roll value to 0.
+		FirstPersonCameraComponent->SetRelativeRotation(FRotator{ cameraRot.Pitch, cameraRot.Yaw, 0 });
 	}
 }
 
