@@ -14,6 +14,7 @@ AEnemy::AEnemy()
 	if (WeaponMesh) {
 		WeaponMesh->SetupAttachment(GetMesh());
 		WeaponMesh->SetRelativeLocation(FVector(-71.3, -50, 134));
+		WeaponMesh->SetCanEverAffectNavigation(false);
 	}
 }
 
