@@ -15,6 +15,7 @@ AEnemy::AEnemy()
 		WeaponMesh->SetupAttachment(GetMesh());
 		WeaponMesh->SetRelativeLocation(FVector(-71.3, -50, 134));
 		WeaponMesh->SetCanEverAffectNavigation(false);
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
 
