@@ -14,7 +14,7 @@ class UNREALTEST_API AEnemy : public ACharacter, public IHitBehaviorInterface
 	GENERATED_BODY()
 private:
 	UPROPERTY(Category=Mesh, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* WeaponMesh;
+	TObjectPtr<UStaticMeshComponent> WeaponMesh;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Gameplay)
