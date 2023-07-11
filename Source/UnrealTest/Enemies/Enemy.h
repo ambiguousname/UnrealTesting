@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "HitBehaviorInterface.h"
 #include "UnrealTest/FP_Character/TP_WeaponComponent.h"
+#include "GenericTeamAgentInterface.h"
 #include "Enemy.generated.h"
 
 UCLASS()

@@ -17,6 +17,7 @@ AEnemy::AEnemy()
 		WeaponMesh->SetCanEverAffectNavigation(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
 }
 
 // Called when the game starts or when spawned
