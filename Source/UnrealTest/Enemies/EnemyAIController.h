@@ -27,6 +27,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	ETeamAttitude::Type GetAttitudeTowards(const AActor* Other) const;
 
+protected:
+	virtual void OnPossess(APawn* InPawn);
+
+public:
+	UPROPERTY(Category=AI, EditAnywhere, BlueprintReadWrite)
+	UBehaviorTree* BehaviorTreeToRun;
 
 private:
 	UPROPERTY(Category=Gameplay, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"))

@@ -14,6 +14,11 @@ AEnemyAIController::AEnemyAIController() {
 	SetPerceptionComponent(*AIPerception);
 }
 
+void AEnemyAIController::OnPossess(APawn* InPawn) {
+	Super::OnPossess(InPawn);
+	RunBehaviorTree(BehaviorTreeToRun);
+}
+
 ETeamAttitude::Type AEnemyAIController::GetAttitudeTowards_Implementation(const AActor* Other) const {
 	const APawn* pawn = Cast<APawn>(Other);
 	AAIController* aiController = nullptr;
