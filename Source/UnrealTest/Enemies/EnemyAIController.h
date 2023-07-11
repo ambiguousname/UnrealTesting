@@ -27,12 +27,20 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	ETeamAttitude::Type GetAttitudeTowards(const AActor* Other) const;
 
+
 protected:
-	virtual void OnPossess(APawn* InPawn);
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void BeginPlay() override;
+
+private:
+	void OnSenseUpdate(AActor* actor, FAIStimulus stimulus);
 
 public:
 	UPROPERTY(Category=AI, EditAnywhere, BlueprintReadWrite)
 	UBehaviorTree* BehaviorTreeToRun;
+
+	UPROPERTY(Category=AI, VisibleAnywhere, BlueprintReadWrite)
+	FVector enemySensedPos;
 
 private:
 	UPROPERTY(Category=Gameplay, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"))
