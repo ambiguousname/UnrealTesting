@@ -30,10 +30,10 @@ public:
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
-	virtual void BeginPlay() override;
 
 private:
-	void OnSenseUpdate(AActor* actor, FAIStimulus stimulus);
+	UFUNCTION()
+	void TargetPerceptionUpdate(AActor* actor, FAIStimulus stimulus);
 
 public:
 	UPROPERTY(Category=AI, EditAnywhere, BlueprintReadWrite)

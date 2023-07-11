@@ -13,14 +13,10 @@ AEnemyAIController::AEnemyAIController() {
 	AIPerception->ConfigureSense(*SightConfig);
 	AIPerception->SetDominantSense(SightConfig->GetSenseImplementation());
 	SetPerceptionComponent(*AIPerception);
+	AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::TargetPerceptionUpdate);
 }
 
-void AEnemyAIController::BeginPlay() {
-	Super::BeginPlay();
-	AIPerception->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &AEnemyAIController::OnSenseUpdate);
-}
-
-void AEnemyAIController::OnSenseUpdate(AActor* actor, FAIStimulus stimulus) {
+void AEnemyAIController::TargetPerceptionUpdate(AActor* actor, FAIStimulus stimulus) {
 	FVector enemySensed = FVector::ZeroVector;
 	if (stimulus.IsActive()) {
 		enemySensed = actor->GetActorLocation();
