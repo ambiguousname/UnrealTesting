@@ -40,7 +40,7 @@ public:
 	UBehaviorTree* BehaviorTreeToRun;
 
 	UPROPERTY(Category=AI, VisibleAnywhere, BlueprintReadWrite)
-	FVector enemySensedPos;
+	TObjectPtr<AActor> sensedEnemy;
 
 private:
 	UPROPERTY(Category=Gameplay, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"))

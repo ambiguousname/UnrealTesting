@@ -17,13 +17,12 @@ AEnemyAIController::AEnemyAIController() {
 }
 
 void AEnemyAIController::TargetPerceptionUpdate(AActor* actor, FAIStimulus stimulus) {
-	FVector enemySensed = FVector::ZeroVector;
 	if (stimulus.IsActive()) {
-		enemySensed = actor->GetActorLocation();
+		sensedEnemy = actor;
 	}
-	enemySensedPos = enemySensed;
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%i"), stimulus.IsActive()));
-	UE_LOG(LogTemp, Warning, TEXT("T?"))
+	else {
+		sensedEnemy = nullptr;
+	}
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn) {
