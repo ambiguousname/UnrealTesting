@@ -88,7 +88,7 @@ void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMov
 
 FVector UCharacterGravityComponent::SkiCalcGroundVelocity(float DeltaTime) {
 	// Acceleration is merely a suggestion:
-	FVector accel = Acceleration * 0 * DeltaTime;
+	FVector accel = Acceleration * skiingGroundInputFactor * DeltaTime;
 	Velocity += accel;
 	return Velocity;
 }
@@ -99,10 +99,10 @@ void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
 	// Imagine three scenarios:
 
 	// 1. You're standing on a flat surface and skiing.
-	// 2. You're on a downslope and your current velocity is headed down the slope.
-	// 3. You're on a downslope and your current velocity is headed up the slope.
+	// 2. You're on a downslope and your current velocity is headed down the slope. Gravity pulls you down the hill.
+	// 3. You're on a downslope and your current velocity is headed up the slope. Gravity pulls you down the hill.
 	
-	// You don't have any control over where you *want* to slide, so 
+	// You don't have any control over where you *want* to slide, so this is all based on gravity. 
 
 	// For 2 and 3, we want to know the force that's pulling us along the slope at all times. SO!
 	// We use some physics: https://www.khanacademy.org/science/physics/forces-newtons-laws/inclined-planes-friction/a/what-are-inclines

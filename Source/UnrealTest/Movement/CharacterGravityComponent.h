@@ -64,7 +64,7 @@ public:
 	void SetIsSkiing(bool shouldSki);
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float skiingGroundInputFactor = 0.1f;
+	float skiingGroundInputFactor = 0.01f;
 private:
 	UPROPERTY(VisibleAnywhere, Category = Skiing)
 	bool bIsSkiing = false;
