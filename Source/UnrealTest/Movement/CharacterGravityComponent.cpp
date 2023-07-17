@@ -112,16 +112,19 @@ FVector UCharacterGravityComponent::GetAverageNormalBeneath() {
 	FVector normal = FVector::ZeroVector;
 	if (World) {
 		// Either SweepMultiByChannel or OverlapMultiByChannel (I think Sweep since it allows for getting normal hits)
-		TArray<FHitResult> outHits;
+		/*TArray<FHitResult> outHits;
 		FVector actorLoc = GetActorFeetLocation();
-		DrawDebugLine(World, actorLoc, actorLoc + internalGravity * 10.0f, FColor::Red, false, 15.0f);
 		World->SweepMultiByChannel(outHits, actorLoc, actorLoc + internalGravity * 10.0f, FQuat::Identity, ECC_WorldDynamic, skiTraceShape, skiTraceParams);
 		int32 scale = outHits.Num();
 		for (int32 i = 0; i < scale; i++) {
 			DrawDebugLine(World, outHits[i].ImpactPoint, outHits[i].ImpactPoint + outHits[i].ImpactNormal * 10.0f, FColor::Yellow, false, 15.0f);
 			normal.AddBounded(outHits[i].ImpactNormal/scale);
-		}
-		normal.Normalize();
+		}*/
+		FVector actorLoc = GetActorFeetLocation();
+		DrawDebugLine(World, actorLoc, actorLoc + internalGravity * 10.0f, FColor::Red, false, 15.0f);
+		FHitResult out;
+		World->LineTraceSingleByChannel(out, actorLoc, actorLoc + internalGravity * 10.0f, ECC_WorldDynamic, skiTraceParams);
+		normal = out.ImpactNormal;
 		/*for (int i = 0; i < iterations; i++) {
 			float angle = 2 * PI * ((float)i / (float)iterations);
 			World->LineTraceSingleByChannel(out, ,  ECC_WorldDynamic);
@@ -213,7 +216,9 @@ void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator new
 			const float InitialPercentRemaining = 1.f - PercentTimeApplied;
 			RampVector = ComputeGroundMovementDelta(delta * InitialPercentRemaining, Hit, false);
 			LastMoveTimeSlice = InitialPercentRemaining * LastMoveTimeSlice;
-			SafeMoveUpdatedComponent(RampVector, UpdatedComponent->GetComponentQuat(), true, Hit);
+			// For whatever reason, commenting out this actually makes movement less jittery.
+			// So, we're just gonna leave this out for now.
+			//SafeMoveUpdatedComponent(RampVector, UpdatedComponent->GetComponentQuat(), true, Hit);
 
 			const float SecondHitPercent = Hit.Time * InitialPercentRemaining;
 			PercentTimeApplied = FMath::Clamp(PercentTimeApplied + SecondHitPercent, 0.f, 1.f);
