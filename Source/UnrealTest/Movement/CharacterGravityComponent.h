@@ -65,10 +65,18 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float skiingGroundInputFactor = 0.01f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float skiSlopeAcceleration = 3;
 private:
 	UPROPERTY(VisibleAnywhere, Category = Skiing)
 	bool bIsSkiing = false;
 
 	EMovementMode preSkiingMovementMode;
 	GravityMovementMode preSkiingCustomMovementMode;
+
+	FVector GetAverageNormalBeneath();
+
+	FCollisionQueryParams skiTraceParams;
+	FCollisionShape skiTraceShape;
 };

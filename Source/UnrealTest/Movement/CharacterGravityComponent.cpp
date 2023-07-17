@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PhysicsVolume.h"
 #include "Components/CapsuleComponent.h"
+#include "LandscapeComponent.h"
 
 UCharacterGravityComponent::UCharacterGravityComponent() {
 	// So we can do our own gravity:
@@ -17,6 +18,14 @@ UCharacterGravityComponent::UCharacterGravityComponent() {
 	bAutoRegister = true;
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
+
+	preSkiingCustomMovementMode = CUSTOM_GRAVITY_WALK;
+	preSkiingMovementMode = EMovementMode::MOVE_Walking;
+
+	skiTraceParams = FCollisionQueryParams();
+	skiTraceParams.AddIgnoredActor(GetOwner());
+
+	skiTraceShape = FCollisionShape::MakeSphere(1.0f);
 }
 
 FRotator UCharacterGravityComponent::GetRotatorFromGravity(FVector grav) {
@@ -87,10 +96,30 @@ void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMov
 }
 
 FVector UCharacterGravityComponent::SkiCalcGroundVelocity(float DeltaTime) {
-	// Acceleration is merely a suggestion:
-	FVector accel = Acceleration * skiingGroundInputFactor * DeltaTime;
-	Velocity += accel;
+	// TODO, fix scaling so it's more accurate and tied to maximum velocity
+	// Acceleration is merely a suggestion (scales up as velocity scales up):
+	//FVector accel = Acceleration * skiingGroundInputFactor * Velocity.Length()/1000 * DeltaTime;
+	//Velocity += accel;
 	return Velocity;
+}
+
+FVector UCharacterGravityComponent::GetAverageNormalBeneath() {
+	UWorld* const World = GetWorld();
+	FVector normal = FVector::ZeroVector;
+	if (World) {
+		// Either SweepMultiByChannel or OverlapMultiByChannel (I think Sweep since it allows for getting normal hits)
+		TArray<FHitResult> outHits;
+		World->SweepMultiByChannel(outHits, GetActorFeetLocation(), internalGravity, FQuat::Identity, ECC_WorldDynamic, skiTraceShape);
+		for (int32 i = 0; i < outHits.Num(); i++) {
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *outHits[i].ImpactNormal.ToString())
+			normal.AddBounded(outHits[i].ImpactNormal);
+		}
+		/*for (int i = 0; i < iterations; i++) {
+			float angle = 2 * PI * ((float)i / (float)iterations);
+			World->LineTraceSingleByChannel(out, ,  ECC_WorldDynamic);
+		}*/
+	}
+	return normal;
 }
 
 void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
@@ -111,13 +140,19 @@ void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
 	// Easy! Project the gravity vector onto the plane.
 	// (Because I don't remember everyting from vector calc) https://stackoverflow.com/questions/9605556/how-to-project-a-point-onto-a-plane-in-3d
 	FVector gravNormal = internalGravity.GetSafeNormal();
-	double dot = Hit.ImpactNormal.Dot(gravNormal);
-	FVector projected = gravNormal - dot * Hit.ImpactNormal;
 
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *Hit.ImpactNormal.ToString(), *projected.ToString()));
+	// I think what we need to do is get the average of nearby normals, so we don't get random jittering:
+	FVector normal = GetAverageNormalBeneath();
 
-	// There might be a faster way to do this since we already know the normal? But this works for now.
-	Velocity += projected.GetSafeNormal();
+	double dot = normal.Dot(gravNormal);
+	FVector projected = gravNormal - dot * normal;
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s %lf"), *normal.ToString(), *projected.ToString(), dot));
+
+	// The closer we are to a flat plane (compared to the gravity), the less impact we'll have on skiing.
+	if (dot > -0.98f) {
+		Velocity += projected.GetSafeNormal() * skiSlopeAcceleration;
+	}
 	// And so the next pass that we do movement, this will be added.
 	// TODO: Probably set this up earlier.
 }
