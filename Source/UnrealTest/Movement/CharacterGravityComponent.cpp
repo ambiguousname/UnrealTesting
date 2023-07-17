@@ -7,13 +7,6 @@
 #include "GameFramework/PhysicsVolume.h"
 #include "Components/CapsuleComponent.h"
 
-enum GravityMovementMode {
-	// Read my lips: no Bill Cipher jokes.
-	CUSTOM_GRAVITY_FALL, UMETA(DisplayName="Custom Gravity Falling")
-	CUSTOM_GRAVITY_WALK, UMETA(DisplayName = "Custom Gravity Walking")
-	CUSTOM_GRAVITY_JUMP, UMETA(DisplayName="Custom Gravity Jumping")
-};
-
 UCharacterGravityComponent::UCharacterGravityComponent() {
 	// So we can do our own gravity:
 	GravityScale = 0;
@@ -93,9 +86,51 @@ void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMov
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
 
+FVector UCharacterGravityComponent::SkiCalcGroundVelocity(float DeltaTime) {
+	// Acceleration is merely a suggestion:
+	FVector accel = Acceleration * 0 * DeltaTime;
+	Velocity += accel;
+	return Velocity;
+}
+
+void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
+	// Here's the real meat and potatoes. Skiing works by taking in the gravity and turning that into pure forward velocity.
+	// This is where surfaces come with the assist.
+	// Imagine three scenarios:
+
+	// 1. You're standing on a flat surface and skiing.
+	// 2. You're on a downslope and your current velocity is headed down the slope.
+	// 3. You're on a downslope and your current velocity is headed up the slope.
+	
+	// You don't have any control over where you *want* to slide, so 
+
+	// For 2 and 3, we want to know the force that's pulling us along the slope at all times. SO!
+	// We use some physics: https://www.khanacademy.org/science/physics/forces-newtons-laws/inclined-planes-friction/a/what-are-inclines
+	// Here's what we want:
+	// Given a plane's normal N, and the down direction G, find the vector V along the plane whose dot product with G is closest to 1 as possible.
+	// Easy! Project the gravity vector onto the plane.
+	FVector gravNormal = internalGravity.GetSafeNormal();
+	double dot = Hit.ImpactNormal.Dot(gravNormal);
+	FVector projected = gravNormal - dot * Hit.ImpactNormal;
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s"), *Hit.ImpactNormal.ToString(), *projected.ToString()));
+
+	// There might be a faster way to do this since we already know the normal? But this works for now.
+	Velocity += projected.GetSafeNormal();
+	// And so the next pass that we do movement, this will be added.
+	// TODO: Probably set this up earlier.
+}
+
 void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator newRotation) {
-	CalcVelocity(DeltaTime, GroundFriction, false, BrakingDecelerationWalking);
-	FVector delta = (Velocity)*DeltaTime;
+	FVector vel = FVector::ZeroVector;
+	if (bIsSkiing) {
+		vel = SkiCalcGroundVelocity(DeltaTime);
+	}
+	else {
+		CalcVelocity(DeltaTime, GroundFriction, false, BrakingDecelerationWalking);
+		vel = Velocity;
+	}
+	FVector delta = vel*DeltaTime;
 	FVector RampVector = FVector(delta);
 	FHitResult Hit(1.f);
 	SafeMoveUpdatedComponent(delta, newRotation, true, Hit);
@@ -104,8 +139,12 @@ void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator new
 		return;
 	}
 
+	if (bIsSkiing) {
+		SkiGroundHit(Hit);
+	}
+
 	float LastMoveTimeSlice = DeltaTime;
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Blocking: %d Walkable Ramp: %d"), Hit.IsValidBlockingHit(), (Hit.Time > 0.f) && (Hit.Normal.Z > UE_KINDA_SMALL_NUMBER) && IsWalkable(Hit)));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Blocking: %d Walkable Ramp: %d"), Hit.IsValidBlockingHit(), (Hit.Time > 0.f) && (Hit.Normal.Z > UE_KINDA_SMALL_NUMBER) && IsWalkable(Hit)));
 
 	// Taken wholesale (and modified some beyond that) from CharacterMovementComponent.cpp's MoveAlongFloor:
 
@@ -219,6 +258,22 @@ void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick 
 			SafeMoveUpdatedComponent(FVector::ZeroVector, newRotation, false, Adjustment);
 		}
 	}
+}
+
+void UCharacterGravityComponent::SetIsSkiing(bool isSkiing) {
+	if (isSkiing != bIsSkiing) {
+		if (isSkiing) {
+			preSkiingMovementMode = MovementMode;
+			preSkiingCustomMovementMode = (GravityMovementMode)CustomMovementMode;
+			if (MovementMode != EMovementMode::MOVE_Custom) {
+				SetMovementMode(EMovementMode::MOVE_Custom, GravityMovementMode::CUSTOM_GRAVITY_WALK);
+			}
+		}
+		else {
+			SetMovementMode(preSkiingMovementMode, preSkiingCustomMovementMode);
+		}
+	}
+	bIsSkiing = isSkiing;
 }
 
 // For applying forces once they've been set up:

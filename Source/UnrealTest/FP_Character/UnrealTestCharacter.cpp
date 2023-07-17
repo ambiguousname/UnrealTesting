@@ -72,16 +72,17 @@ void AUnrealTestCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Look);
 
 		//Sliding
-		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Slide);
+		EnhancedInputComponent->BindAction(SkiAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Ski);
 	}
 }
 
-void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
+void AUnrealTestCharacter::Ski(const FInputActionValue& Value)
 {
-	bool isSliding = Value.Get<bool>();
+	Cast<UCharacterGravityComponent>(GetMovementComponent())->SetIsSkiing(Value.Get<bool>());
+	/*
 	UCharacterGravityComponent* comp = Cast<UCharacterGravityComponent>(GetMovementComponent());
 	if (comp) {
-		if (isSliding) {
+		if (bIsSkiing) {
 			comp->SetMovementMode(EMovementMode::MOVE_Custom, 0);
 			comp->GravityShift(FVector::BackwardVector * 9.8f);
 		}
@@ -90,6 +91,7 @@ void AUnrealTestCharacter::Slide(const FInputActionValue& Value)
 			comp->SetMovementMode(EMovementMode::MOVE_Walking);
 		}
 	}
+	*/
 }
 
 void AUnrealTestCharacter::Move(const FInputActionValue& Value)

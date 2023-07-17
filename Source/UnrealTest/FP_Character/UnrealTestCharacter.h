@@ -40,21 +40,19 @@ class AUnrealTestCharacter : public ACharacter
 	class UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SlideAction;
+	class UInputAction* SkiAction;
 
-	
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+		class UInputAction* LookAction;
+
 public:
 	AUnrealTestCharacter(const FObjectInitializer& ObjectInitializer);
 
-public:
-		
-	/** Look Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
-
-	/** Bool for AnimBP to switch to another animation set */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
-	bool bHasRifle;
+	/** Returns Mesh1P subobject **/
+	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
+	/** Returns FirstPersonCameraComponent subobject **/
+	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 	/** Setter to set the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
@@ -73,19 +71,15 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void Slide(const FInputActionValue& Value);
-
-protected:
+	void Ski(const FInputActionValue& Value);
+	
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
 
-public:
-	/** Returns Mesh1P subobject **/
-	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
-	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-
-
+public: 
+	/** Bool for AnimBP to switch to another animation set */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	bool bHasRifle;
 };
 

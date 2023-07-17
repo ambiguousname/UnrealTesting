@@ -7,6 +7,13 @@
 #include "Camera/CameraComponent.h"
 #include "CharacterGravityComponent.generated.h"
 
+enum GravityMovementMode {
+	// Read my lips: no Bill Cipher jokes.
+	CUSTOM_GRAVITY_FALL, UMETA(DisplayName = "Custom Gravity Falling")
+	CUSTOM_GRAVITY_WALK, UMETA(DisplayName = "Custom Gravity Walking")
+	CUSTOM_GRAVITY_JUMP, UMETA(DisplayName = "Custom Gravity Jumping")
+};
+
 /**
  * 
  */
@@ -27,6 +34,10 @@ public:
 protected:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	FVector SkiCalcGroundVelocity(float DeltaTime);
+
+	void SkiGroundHit(FHitResult Hit);
+
 	void CustomGravityWalk(float DeltaTime, FRotator newRotation);
 
 	void CustomGravityFall(float DeltaTime, FRotator newRotation, int32 Iterations);
@@ -35,6 +46,7 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GravityRotationRate = 1.0f;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector internalGravity = FVector(0.0f, 0.0f, -9.8f);
@@ -45,4 +57,18 @@ protected:
 	FRotator previousRotation;
 	// Percentage:
 	float gravityRotationCompletion = 0.0f;
+
+// ----------------- SKIING ------------------------
+public:
+	UFUNCTION(BlueprintCallable, Category=Skiing)
+	void SetIsSkiing(bool shouldSki);
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float skiingGroundInputFactor = 0.1f;
+private:
+	UPROPERTY(VisibleAnywhere, Category = Skiing)
+	bool bIsSkiing = false;
+
+	EMovementMode preSkiingMovementMode;
+	GravityMovementMode preSkiingCustomMovementMode;
 };
