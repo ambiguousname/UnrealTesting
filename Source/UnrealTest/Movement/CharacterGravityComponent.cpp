@@ -109,6 +109,7 @@ void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
 	// Here's what we want:
 	// Given a plane's normal N, and the down direction G, find the vector V along the plane whose dot product with G is closest to 1 as possible.
 	// Easy! Project the gravity vector onto the plane.
+	// (Because I don't remember everyting from vector calc) https://stackoverflow.com/questions/9605556/how-to-project-a-point-onto-a-plane-in-3d
 	FVector gravNormal = internalGravity.GetSafeNormal();
 	double dot = Hit.ImpactNormal.Dot(gravNormal);
 	FVector projected = gravNormal - dot * Hit.ImpactNormal;
