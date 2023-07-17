@@ -32,11 +32,13 @@ public:
 
 	static FRotator GetRotatorFromGravity(FVector gravityDirection);
 protected:
+	virtual void BeginPlay();
+
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	FVector SkiCalcGroundVelocity(float DeltaTime);
 
-	void SkiGroundHit(FHitResult Hit);
+	void SkiGroundHit();
 
 	void CustomGravityWalk(float DeltaTime, FRotator newRotation);
 

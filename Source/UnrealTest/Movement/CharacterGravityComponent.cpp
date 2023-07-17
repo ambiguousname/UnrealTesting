@@ -23,9 +23,13 @@ UCharacterGravityComponent::UCharacterGravityComponent() {
 	preSkiingMovementMode = EMovementMode::MOVE_Walking;
 
 	skiTraceParams = FCollisionQueryParams();
-	skiTraceParams.AddIgnoredActor(GetOwner());
+}
 
-	skiTraceShape = FCollisionShape::MakeSphere(1.0f);
+void UCharacterGravityComponent::BeginPlay() {
+	Super::BeginPlay();
+
+	skiTraceParams.AddIgnoredActor(GetOwner());
+	skiTraceShape = FCollisionShape::MakeSphere(10.0f);
 }
 
 FRotator UCharacterGravityComponent::GetRotatorFromGravity(FVector grav) {
@@ -109,20 +113,27 @@ FVector UCharacterGravityComponent::GetAverageNormalBeneath() {
 	if (World) {
 		// Either SweepMultiByChannel or OverlapMultiByChannel (I think Sweep since it allows for getting normal hits)
 		TArray<FHitResult> outHits;
-		World->SweepMultiByChannel(outHits, GetActorFeetLocation(), internalGravity, FQuat::Identity, ECC_WorldDynamic, skiTraceShape);
-		for (int32 i = 0; i < outHits.Num(); i++) {
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *outHits[i].ImpactNormal.ToString())
-			normal.AddBounded(outHits[i].ImpactNormal);
+		FVector actorLoc = GetActorFeetLocation();
+		DrawDebugLine(World, actorLoc, actorLoc + internalGravity * 10.0f, FColor::Red, false, 15.0f);
+		World->SweepMultiByChannel(outHits, actorLoc, actorLoc + internalGravity * 10.0f, FQuat::Identity, ECC_WorldDynamic, skiTraceShape, skiTraceParams);
+		int32 scale = outHits.Num();
+		for (int32 i = 0; i < scale; i++) {
+			DrawDebugLine(World, outHits[i].ImpactPoint, outHits[i].ImpactPoint + outHits[i].ImpactNormal * 10.0f, FColor::Yellow, false, 15.0f);
+			normal.AddBounded(outHits[i].ImpactNormal/scale);
 		}
+		normal.Normalize();
 		/*for (int i = 0; i < iterations; i++) {
 			float angle = 2 * PI * ((float)i / (float)iterations);
 			World->LineTraceSingleByChannel(out, ,  ECC_WorldDynamic);
 		}*/
+
+		DrawDebugLine(World, actorLoc, actorLoc + normal * 10.0f, FColor::Green, false, 15.0f);
 	}
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("%s"), *normal.ToString()));
 	return normal;
 }
 
-void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
+void UCharacterGravityComponent::SkiGroundHit() {
 	// Here's the real meat and potatoes. Skiing works by taking in the gravity and turning that into pure forward velocity.
 	// This is where surfaces come with the assist.
 	// Imagine three scenarios:
@@ -146,12 +157,14 @@ void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
 
 	double dot = normal.Dot(gravNormal);
 	FVector projected = gravNormal - dot * normal;
-
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s %lf"), *normal.ToString(), *projected.ToString(), dot));
+	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%s %s %lf"), *normal.ToString(), *projected.ToString(), dot));
 
 	// The closer we are to a flat plane (compared to the gravity), the less impact we'll have on skiing.
 	if (dot > -0.98f) {
-		Velocity += projected.GetSafeNormal() * skiSlopeAcceleration;
+		DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + projected * 100.0f, FColor::Blue, false, 15.0f);
+		DrawDebugLine(GetWorld(), GetActorLocation() + projected * 100.0f, GetActorLocation() + projected * 100.0f + internalGravity * 10.0f, FColor::Blue, false, 15.0f);
+		// We don't get the normal of projected because not all slopes are uniform:
+		Velocity += projected * skiSlopeAcceleration;
 	}
 	// And so the next pass that we do movement, this will be added.
 	// TODO: Probably set this up earlier.
@@ -160,6 +173,7 @@ void UCharacterGravityComponent::SkiGroundHit(FHitResult Hit) {
 void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator newRotation) {
 	FVector vel = FVector::ZeroVector;
 	if (bIsSkiing) {
+		SkiGroundHit();
 		vel = SkiCalcGroundVelocity(DeltaTime);
 	}
 	else {
@@ -173,10 +187,6 @@ void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator new
 	if (!Hit.IsValidBlockingHit()) {
 		SetMovementMode(EMovementMode::MOVE_Custom, CUSTOM_GRAVITY_FALL);
 		return;
-	}
-
-	if (bIsSkiing) {
-		SkiGroundHit(Hit);
 	}
 
 	float LastMoveTimeSlice = DeltaTime;
