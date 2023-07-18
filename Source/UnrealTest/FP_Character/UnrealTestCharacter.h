@@ -72,6 +72,10 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void Ski(const FInputActionValue& Value);
+
+	void Jetpack(const FInputActionValue& Value);
+
+	void StopJetpack(const FInputActionValue& Value);
 	
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;

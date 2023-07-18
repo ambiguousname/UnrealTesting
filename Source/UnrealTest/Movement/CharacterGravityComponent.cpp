@@ -23,6 +23,7 @@ UCharacterGravityComponent::UCharacterGravityComponent() {
 	preSkiingMovementMode = EMovementMode::MOVE_Walking;
 
 	skiTraceParams = FCollisionQueryParams();
+	SetWalkableFloorAngle(70.0f);
 }
 
 void UCharacterGravityComponent::BeginPlay() {
@@ -32,6 +33,7 @@ void UCharacterGravityComponent::BeginPlay() {
 	skiTraceShape = FCollisionShape::MakeSphere(10.0f);
 }
 
+#pragma region GravityUtil
 FRotator UCharacterGravityComponent::GetRotatorFromGravity(FVector grav) {
 	// Primarily, this is about rotating the global down down vector (and everything else) to match the new gravity vector.
 	// So, when the gravity changes, look at how you can set the actor's rotation to match the new gravity.
@@ -95,8 +97,23 @@ bool UCharacterGravityComponent::RotateTowardsGravity(float DeltaTime, FRotator&
 	}
 }
 
-void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) {
-	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+#pragma endregion GravityUtil
+
+#pragma region SkiControls
+void UCharacterGravityComponent::SetIsSkiing(bool isSkiing) {
+	if (isSkiing != bIsSkiing) {
+		if (isSkiing) {
+			preSkiingMovementMode = MovementMode;
+			preSkiingCustomMovementMode = (GravityMovementMode)CustomMovementMode;
+			if (MovementMode != EMovementMode::MOVE_Custom) {
+				SetMovementMode(EMovementMode::MOVE_Custom, GravityMovementMode::CUSTOM_GRAVITY_WALK);
+			}
+		}
+		else {
+			SetMovementMode(preSkiingMovementMode, preSkiingCustomMovementMode);
+		}
+	}
+	bIsSkiing = isSkiing;
 }
 
 FVector UCharacterGravityComponent::SkiCalcGroundVelocity(float DeltaTime) {
@@ -173,6 +190,37 @@ void UCharacterGravityComponent::SkiGroundHit() {
 	// TODO: Probably set this up earlier.
 }
 
+#pragma endregion SkiControls
+
+#pragma region JetpackControls
+void UCharacterGravityComponent::SetIsJetpacking(bool shouldJetpack) {
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("%i %i"), shouldJetpack, bIsJetpacking));
+	if (shouldJetpack && (MovementMode != EMovementMode::MOVE_Custom || CustomMovementMode != CUSTOM_GRAVITY_FALL) && jetpackEnergy > 0) {
+
+		bIsJetpacking = shouldJetpack;
+		SetMovementMode(EMovementMode::MOVE_Custom, CUSTOM_GRAVITY_FALL);
+	}
+	else if (!shouldJetpack) {
+		bIsJetpacking = shouldJetpack;
+	}
+}
+
+FVector UCharacterGravityComponent::JetpackThrust(float DeltaTime) {
+	jetpackEnergy -= jetpackBurnRate * DeltaTime;
+	if (jetpackEnergy <= 0) {
+		jetpackEnergy = false;
+		SetIsJetpacking(false);
+		return FVector::ZeroVector;
+	}
+	return -internalGravity * 1.5f;
+}
+#pragma endregion JetpackControls
+
+#pragma region CustomMovement
+void UCharacterGravityComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) {
+	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+}
+
 void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator newRotation) {
 	FVector vel = FVector::ZeroVector;
 	if (bIsSkiing) {
@@ -183,6 +231,7 @@ void UCharacterGravityComponent::CustomGravityWalk(float DeltaTime, FRotator new
 		CalcVelocity(DeltaTime, GroundFriction, false, BrakingDecelerationWalking);
 		vel = Velocity;
 	}
+
 	FVector delta = vel*DeltaTime;
 	FVector RampVector = FVector(delta);
 	FHitResult Hit(1.f);
@@ -280,7 +329,9 @@ void UCharacterGravityComponent::CustomGravityFall(float DeltaTime, FRotator new
 
 		float GravityTime = timeTick;
 
-		Velocity = NewFallVelocity(Velocity, internalGravity * 100.0f, GravityTime);
+		// TODO: Replace 
+		CalcVelocity(DeltaTime, 0.0f, false, 0.0f);
+		Velocity = NewFallVelocity(Velocity, internalGravity * 100.0f, GravityTime) + Acceleration * DeltaTime;
 
 		// Compute change in position (using midpoint integration method).
 		FVector Adjusted = 0.5f * (OldVelocityWithRootMotion + Velocity) * timeTick;
@@ -289,6 +340,7 @@ void UCharacterGravityComponent::CustomGravityFall(float DeltaTime, FRotator new
 		SafeMoveUpdatedComponent(Adjusted, newRotation, true, Hit);
 
 		float subTimeTickRemaining = timeTick * (1.f - Hit.Time);
+		// TODO: Some code for sliding along/moving up a surface while jetpacking (since that causes some blocking issues)
 		if (Hit.bBlockingHit) {
 			if (Hit.Normal.Dot(-internalGravity.GetSafeNormal()) > 0.5) {
 				remainingTime += subTimeTickRemaining;
@@ -300,6 +352,10 @@ void UCharacterGravityComponent::CustomGravityFall(float DeltaTime, FRotator new
 }
 
 void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
+
+	if (bIsJetpacking) {
+		AddForce(JetpackThrust(DeltaTime) * 10000.0f);
+	}
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (MovementMode.GetValue() != EMovementMode::MOVE_Custom) {
 		AddForce(internalGravity * 10000.0f);
@@ -309,27 +365,18 @@ void UCharacterGravityComponent::TickComponent(float DeltaTime, enum ELevelTick 
 			SafeMoveUpdatedComponent(FVector::ZeroVector, newRotation, false, Adjustment);
 		}
 	}
-}
-
-void UCharacterGravityComponent::SetIsSkiing(bool isSkiing) {
-	if (isSkiing != bIsSkiing) {
-		if (isSkiing) {
-			preSkiingMovementMode = MovementMode;
-			preSkiingCustomMovementMode = (GravityMovementMode)CustomMovementMode;
-			if (MovementMode != EMovementMode::MOVE_Custom) {
-				SetMovementMode(EMovementMode::MOVE_Custom, GravityMovementMode::CUSTOM_GRAVITY_WALK);
-			}
-		}
-		else {
-			SetMovementMode(preSkiingMovementMode, preSkiingCustomMovementMode);
+	if (!bIsJetpacking && jetpackEnergy < 100.0f) {
+		jetpackEnergy += jetpackRecoverRate * DeltaTime;
+		if (jetpackEnergy > 100.0f) {
+			jetpackEnergy = 100.0f;
 		}
 	}
-	bIsSkiing = isSkiing;
 }
 
 // For applying forces once they've been set up:
 void UCharacterGravityComponent::PhysCustom(float DeltaTime, int32 Iterations) {
 	Super::PhysCustom(DeltaTime, Iterations);
+
 
 	FRotator newRotation = GetLastUpdateRotation();
 	RotateTowardsGravity(DeltaTime, newRotation);
@@ -339,7 +386,9 @@ void UCharacterGravityComponent::PhysCustom(float DeltaTime, int32 Iterations) {
 			CustomGravityFall(DeltaTime, newRotation, Iterations);
 		break;
 		case CUSTOM_GRAVITY_WALK:
+			// TODO: Add iterating code.
 			CustomGravityWalk(DeltaTime, newRotation);
 		break;
 	}
 }
+#pragma endregion CustomMovement

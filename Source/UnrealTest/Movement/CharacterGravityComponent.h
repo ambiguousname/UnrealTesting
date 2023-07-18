@@ -36,10 +36,6 @@ protected:
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	FVector SkiCalcGroundVelocity(float DeltaTime);
-
-	void SkiGroundHit();
-
 	void CustomGravityWalk(float DeltaTime, FRotator newRotation);
 
 	void CustomGravityFall(float DeltaTime, FRotator newRotation, int32 Iterations);
@@ -60,16 +56,38 @@ protected:
 	// Percentage:
 	float gravityRotationCompletion = 0.0f;
 
+// ----------------- JETPACKING --------------------
+public:
+	UFUNCTION(BlueprintCallable, Category=Skiing)
+	void SetIsJetpacking(bool shouldJetpack);
+
+public:
+	// How much to reduce jetpack energy by per frame.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float jetpackBurnRate = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float jetpackRecoverRate = 0.01f;
+private:
+	FVector JetpackThrust(float DeltaTime);
+private:
+	float jetpackEnergy = 100.0f;
+
+	bool bIsJetpacking = false;
 // ----------------- SKIING ------------------------
 public:
 	UFUNCTION(BlueprintCallable, Category=Skiing)
 	void SetIsSkiing(bool shouldSki);
+protected:
+	FVector SkiCalcGroundVelocity(float DeltaTime);
+
+	void SkiGroundHit();
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float skiingGroundInputFactor = 0.01f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float skiSlopeAcceleration = 3;
+	float skiSlopeAcceleration = 10;
 private:
 	UPROPERTY(VisibleAnywhere, Category = Skiing)
 	bool bIsSkiing = false;

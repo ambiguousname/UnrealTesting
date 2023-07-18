@@ -1,6 +1,8 @@
 Skiing notes: gravity takes over while skiing. You can only alter the direction of your movement while skiing on the ground. HOWEVER, you start out with no control over your direction.
 The more speed you gain, the more you're able to *somewhat* control direction.
 
+System has to account for the fact that you're moving so fast that you get away from the surface and can fall.
+
 You experience greater control in the air while skiing. But again, that's about it.
 
 - Tribes style skiing

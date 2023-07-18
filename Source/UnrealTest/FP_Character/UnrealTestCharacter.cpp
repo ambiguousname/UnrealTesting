@@ -62,15 +62,14 @@ void AUnrealTestCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Jetpack);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AUnrealTestCharacter::StopJetpack);
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Move);
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Look);
-
 		//Sliding
 		EnhancedInputComponent->BindAction(SkiAction, ETriggerEvent::Triggered, this, &AUnrealTestCharacter::Ski);
 	}
@@ -105,6 +104,13 @@ void AUnrealTestCharacter::Move(const FInputActionValue& Value)
 		AddMovementInput(FirstPersonCameraComponent->GetForwardVector(), MovementVector.Y);
 		AddMovementInput(FirstPersonCameraComponent->GetRightVector(), MovementVector.X);
 	}
+}
+
+void AUnrealTestCharacter::Jetpack(const FInputActionValue& Value) {
+	Cast<UCharacterGravityComponent>(GetMovementComponent())->SetIsJetpacking(true);
+}
+void AUnrealTestCharacter::StopJetpack(const FInputActionValue& Value) {
+	Cast<UCharacterGravityComponent>(GetMovementComponent())->SetIsJetpacking(false);
 }
 
 void AUnrealTestCharacter::Look(const FInputActionValue& Value)
